@@ -1,0 +1,67 @@
+.mind-map {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: flex-start;
+
+  button {
+    margin-bottom: 1rem;
+  }
+
+  .bubble {
+    padding: 1rem;
+    margin: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 10em;
+
+    input[type="text"] {
+      width: 100%;
+      padding: 0.5em;
+      margin-bottom: 0.5rem;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis; /* Tronquer le texte en cas de dépassement */
+    }
+
+    .bubble-type {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      padding-top: 0.5rem;
+      font-size: 0.8rem;
+
+      label {
+        flex: 1;
+        text-align: center;
+        padding: 0.2rem 0;
+        cursor: pointer;
+      }
+    }
+
+    &.normal {
+      background-color: #f1f1f1;
+    }
+
+    &.important {
+      background-color: #ffd166;
+    }
+
+    &.very-important {
+      background-color: #ef476f;
+    }
+
+    &.example {
+      background-color: #9d4edd;
+    }
+
+    /* Afficher une info-bulle avec le texte complet en cas de survol de la bulle */
+    &:hover {
+      overflow: visible;
+      white-space: normal;
+    }
+  }
+}
