@@ -37,7 +37,7 @@ const MindMap = () => {
           className={`bubble ${bubble.importance}`}
           style={{ width: `${bubble.text.length * 1.5}em` }}
         >
-          <input
+          <textarea
             type="text"
             value={bubble.text}
             onChange={(e) => updateBubble(bubble.id, e.target.value)}
