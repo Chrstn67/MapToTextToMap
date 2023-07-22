@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+
 import "./MindMap.scss";
 
 const MindMap = () => {
@@ -6,6 +7,18 @@ const MindMap = () => {
   const [mapTitle, setMapTitle] = useState("Titre de la carte mentale");
   const [keywordMode, setKeywordMode] = useState(false); // État pour le mode "mots-clés"
   const [selectedKeywords, setSelectedKeywords] = useState([]); // État pour les mots-clés sélectionnés
+  const [savedMindMaps, setSavedMindMaps] = useState([]);
+
+  useEffect(() => {
+    const savedMindMaps = JSON.parse(localStorage.getItem("mindMaps")) || [];
+    setSavedMindMaps(savedMindMaps);
+    setBubbles(savedMindMaps); // Récupérer les bulles sauvegardées
+  }, []);
+
+  // Fonction pour sauvegarder les mind maps dans le local storage
+  const saveMindMapsToLocalStorage = (maps) => {
+    localStorage.setItem("mindMaps", JSON.stringify(maps));
+  };
 
   const handleMapTitleChange = (e) => {
     setMapTitle(e.target.value);
@@ -21,12 +34,16 @@ const MindMap = () => {
     };
 
     setBubbles([...bubbles, newBubble]);
+    saveMindMapsToLocalStorage([...bubbles, newBubble]);
   };
 
   const updateBubble = (id, text) => {
-    setBubbles(
-      bubbles.map((bubble) => (bubble.id === id ? { ...bubble, text } : bubble))
+    const updatedBubbles = bubbles.map((bubble) =>
+      bubble.id === id ? { ...bubble, text } : bubble
     );
+    setBubbles(updatedBubbles);
+    setSavedMindMaps(updatedBubbles);
+    saveMindMapsToLocalStorage(updatedBubbles);
   };
 
   const handleImportanceChange = (id, importance) => {
@@ -38,7 +55,11 @@ const MindMap = () => {
   };
 
   const deleteBubble = (id) => {
-    setBubbles(bubbles.filter((bubble) => bubble.id !== id));
+    const filteredBubbles = bubbles.filter((bubble) => bubble.id !== id);
+    setBubbles(filteredBubbles);
+
+    // Sauvegarder l'ensemble des bulles après avoir filtré la bulle supprimée
+    saveMindMapsToLocalStorage(filteredBubbles);
   };
 
   const moveBubbleBefore = (id) => {
@@ -49,6 +70,9 @@ const MindMap = () => {
       updatedBubbles[bubbleIndex] = updatedBubbles[bubbleIndex - 1];
       updatedBubbles[bubbleIndex - 1] = tempBubble;
       setBubbles(updatedBubbles);
+
+      // Sauvegarder l'ensemble des bulles après avoir effectué les modifications d'ordre
+      saveMindMapsToLocalStorage(updatedBubbles);
     }
   };
 
@@ -60,6 +84,9 @@ const MindMap = () => {
       updatedBubbles[bubbleIndex] = updatedBubbles[bubbleIndex + 1];
       updatedBubbles[bubbleIndex + 1] = tempBubble;
       setBubbles(updatedBubbles);
+
+      // Sauvegarder l'ensemble des bulles après avoir effectué les modifications d'ordre
+      saveMindMapsToLocalStorage(updatedBubbles);
     }
   };
 
@@ -122,6 +149,10 @@ const MindMap = () => {
       )
     );
   };
+  const handleSave = () => {
+    saveMindMapsToLocalStorage(bubbles);
+    alert("Map sauvegardée");
+  };
 
   return (
     <div className="mind-map">
@@ -140,6 +171,9 @@ const MindMap = () => {
         </button>
         <button className="button-keyword" onClick={handleKeywordModeChange}>
           {keywordMode ? "Mode texte complet" : "Mode mots-clés"}
+        </button>
+        <button className="button-save" onClick={handleSave}>
+          Enregistrer
         </button>
       </div>
 
