@@ -1,68 +1,187 @@
 .mind-map {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-  align-items: flex-start;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  font-family: Arial, sans-serif;
+  min-height: 100vh;
 
-  button {
-    margin-bottom: 1rem;
+  .sticky-buttons {
+    background-color: #18835f;
+    color: #fff;
+    padding: 1em;
+    position: sticky;
+    top: 0;
+    h1 {
+      margin: 1rem 0;
+    }
+
+    .button-add,
+    .button-keyword {
+      padding: 0.5rem 1rem;
+      margin: 0.5rem;
+      border: none;
+      border-radius: 4px;
+      background-color: #318ef1;
+      color: #fff;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background-color 0.2s;
+
+      &:hover {
+        background-color: #0056b3;
+      }
+    }
   }
 
   .bubble {
+    margin: 1rem;
     padding: 1rem;
-    margin: 0.5rem;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-width: 15em;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background-color: #adacac;
+    font-size: 1rem;
+    max-width: 85vw;
+    word-wrap: break-word;
+    min-width: 18em;
+    min-height: 10em;
+    white-space: pre-wrap;
 
-    textarea[type="text"] {
-      width: 100%;
-      height: 20em;
-      padding: 0.5em;
-      margin-bottom: 0.5rem;
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis; /* Tronquer le texte en cas de dépassement */
+    &.normal {
+      background-color: #f9f9f9;
+    }
+
+    &.important {
+      background-color: #f8b7b6;
+    }
+
+    &.very-important {
+      background-color: #fa4646;
+    }
+
+    &.example {
+      background-color: #fff385;
+    }
+
+    &.citation {
+      background-color: #9fff9f;
+    }
+
+    .keyword-text {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .keyword {
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      background-color: #69853d;
+      color: #fff;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background-color 0.2s;
+
+      &.selected {
+        background-color: #0056b3;
+      }
+    }
+
+    .bubble-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+
+      button {
+        padding: 0.25rem;
+        border: none;
+        border-radius: 4px;
+        background-color: #000000;
+        color: #fff;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: background-color 0.2s;
+
+        &:hover {
+          background-color: #0056b3;
+        }
+      }
     }
 
     .bubble-type {
       display: flex;
-      justify-content: space-between;
-      width: 100%;
-      padding-top: 0.5rem;
-      font-size: 0.8rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 1rem;
+      font-size: 1rem;
 
       label {
-        flex: 1;
-        text-align: center;
-        padding: 0.2rem 0;
-        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
       }
     }
 
-    &.normal {
-      background-color: #f1f1f1;
+    textarea {
+      width: 100%;
+      height: 15em;
+      box-sizing: border-box;
+      margin-top: 1rem;
+      padding: 0.5rem;
+      border-radius: 4px;
+      resize: none;
+      font-size: 1rem;
+      border: 1px solid #ccc;
     }
 
-    &.important {
-      background-color: #ffd166;
-    }
+    .keywords-container {
+      margin-top: 1rem;
+      font-size: 1rem;
 
-    &.very-important {
-      background-color: #ef476f;
-    }
+      button {
+        padding: 0.5rem 1rem;
+        margin-top: 0.5rem;
+        border: none;
+        border-radius: 4px;
+        background-color: #007bff;
+        color: #fff;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: background-color 0.2s;
 
-    &.example {
-      background-color: #9d4edd;
-    }
+        &:hover {
+          background-color: #0056b3;
+        }
+      }
 
-    /* Afficher une info-bulle avec le texte complet en cas de survol de la bulle */
-    &:hover {
-      overflow: visible;
-      white-space: normal;
+      .keyword-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+
+        input {
+          width: 100%;
+          padding: 0.5rem;
+          border-radius: 4px;
+          font-size: 1rem;
+        }
+
+        button {
+          padding: 0.25rem 0.5rem;
+          border: none;
+          border-radius: 4px;
+          background-color: #007bff;
+          color: #fff;
+          cursor: pointer;
+          font-size: 1rem;
+          transition: background-color 0.2s;
+
+          &:hover {
+            background-color: #0056b3;
+          }
+        }
+      }
     }
   }
 }
