@@ -1,12 +1,22 @@
 import React from "react";
-import NavBar from "./NavBar/NavBar";
+import { Link } from "react-router-dom";
+
 import "./Header.scss";
 
 const Header = () => {
   return (
     <header>
       <h1>MapToTextToMap</h1>
-      <NavBar />
+      <nav>
+        <ul>
+          <li>
+            <Link to="/">Créer une Map</Link>
+          </li>
+          <li>
+            <Link to="/mindmaps">Listes des Maps</Link>
+          </li>
+        </ul>
+      </nav>
     </header>
   );
 };

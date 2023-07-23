@@ -1,0 +1,76 @@
+.saved-mind-map {
+  padding: 1em;
+
+  h2 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  .bubble {
+    font-size: 1.4rem;
+    margin-bottom: 1rem;
+
+    p {
+      margin-bottom: 0.5rem;
+    }
+
+    .keywords-container {
+      h3 {
+        font-size: 1.2rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .keyword {
+        font-size: 1.2rem;
+        background-color: #007bff;
+        color: #fff;
+        padding: 0.3em 0.5em;
+        margin-right: 0.5rem;
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    h2 {
+      font-size: 1.8rem;
+    }
+
+    .bubble {
+      font-size: 1.2rem;
+    }
+
+    .keywords-container {
+      h3 {
+        font-size: 1.1rem;
+      }
+
+      .keyword {
+        font-size: 1.1rem;
+        padding: 0.2em 0.4em;
+        margin-right: 0.3rem;
+      }
+    }
+  }
+
+  @media (max-width: 480px) {
+    h2 {
+      font-size: 1.6rem;
+    }
+
+    .bubble {
+      font-size: 1rem;
+    }
+
+    .keywords-container {
+      h3 {
+        font-size: 1rem;
+      }
+
+      .keyword {
+        font-size: 1rem;
+        padding: 0.1em 0.3em;
+        margin-right: 0.2rem;
+      }
+    }
+  }
+}

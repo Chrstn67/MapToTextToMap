@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-
+import { openDB, deleteDB, wrap, unwrap } from "idb";
 import "./MindMap.scss";
 
 const MindMap = () => {
@@ -7,17 +7,45 @@ const MindMap = () => {
   const [mapTitle, setMapTitle] = useState("Titre de la carte mentale");
   const [keywordMode, setKeywordMode] = useState(false); // État pour le mode "mots-clés"
   const [selectedKeywords, setSelectedKeywords] = useState([]); // État pour les mots-clés sélectionnés
-  const [savedMindMaps, setSavedMindMaps] = useState([]);
+  const DB_NAME = "mindMapDB";
+  const DB_STORE_NAME = "mindMaps";
 
   useEffect(() => {
-    const savedMindMaps = JSON.parse(localStorage.getItem("mindMaps")) || [];
-    setSavedMindMaps(savedMindMaps);
-    setBubbles(savedMindMaps); // Récupérer les bulles sauvegardées
+    // Initialisation de la base de données IndexedDB
+    const initDB = async () => {
+      const db = await openDB(DB_NAME, 1, {
+        upgrade(db) {
+          db.createObjectStore(DB_STORE_NAME, { keyPath: "id" });
+        },
+      });
+      const savedMindMaps = await wrap(db)
+        .getAll(DB_STORE_NAME)
+        .catch((error) => {
+          console.error("Error getting saved mind maps:", error);
+          return [];
+        });
+      setBubbles(savedMindMaps);
+    };
+
+    initDB();
   }, []);
 
-  // Fonction pour sauvegarder les mind maps dans le local storage
-  const saveMindMapsToLocalStorage = (maps) => {
-    localStorage.setItem("mindMaps", JSON.stringify(maps));
+  // Fonction pour sauvegarder les mind maps dans IndexedDB
+  const saveMindMapsToIndexedDB = async (maps) => {
+    const db = await openDB(DB_NAME, 1);
+    const tx = db.transaction(DB_STORE_NAME, "readwrite");
+    const store = tx.objectStore(DB_STORE_NAME);
+    // Supprimer toutes les bulles existantes dans IndexedDB
+    await store.clear();
+    // Ajouter les nouvelles bulles dans IndexedDB
+    await Promise.all(
+      maps.map((map) =>
+        store.put({
+          ...map,
+          title: mapTitle, // Ajouter le titre dans l'objet bubble
+        })
+      )
+    );
   };
 
   const handleMapTitleChange = (e) => {
@@ -31,10 +59,11 @@ const MindMap = () => {
       text: "Nouveau texte complet",
       keywords: [], // Tableau pour stocker les mots-clés
       importance: "normal",
+      title: mapTitle, // Ajouter le titre dans l'objet bubble
     };
 
     setBubbles([...bubbles, newBubble]);
-    saveMindMapsToLocalStorage([...bubbles, newBubble]);
+    saveMindMapsToIndexedDB([...bubbles, newBubble]);
   };
 
   const updateBubble = (id, text) => {
@@ -42,8 +71,7 @@ const MindMap = () => {
       bubble.id === id ? { ...bubble, text } : bubble
     );
     setBubbles(updatedBubbles);
-    setSavedMindMaps(updatedBubbles);
-    saveMindMapsToLocalStorage(updatedBubbles);
+    saveMindMapsToIndexedDB(updatedBubbles);
   };
 
   const handleImportanceChange = (id, importance) => {
@@ -57,9 +85,7 @@ const MindMap = () => {
   const deleteBubble = (id) => {
     const filteredBubbles = bubbles.filter((bubble) => bubble.id !== id);
     setBubbles(filteredBubbles);
-
-    // Sauvegarder l'ensemble des bulles après avoir filtré la bulle supprimée
-    saveMindMapsToLocalStorage(filteredBubbles);
+    saveMindMapsToIndexedDB(filteredBubbles);
   };
 
   const moveBubbleBefore = (id) => {
@@ -70,9 +96,7 @@ const MindMap = () => {
       updatedBubbles[bubbleIndex] = updatedBubbles[bubbleIndex - 1];
       updatedBubbles[bubbleIndex - 1] = tempBubble;
       setBubbles(updatedBubbles);
-
-      // Sauvegarder l'ensemble des bulles après avoir effectué les modifications d'ordre
-      saveMindMapsToLocalStorage(updatedBubbles);
+      saveMindMapsToIndexedDB(updatedBubbles);
     }
   };
 
@@ -84,9 +108,7 @@ const MindMap = () => {
       updatedBubbles[bubbleIndex] = updatedBubbles[bubbleIndex + 1];
       updatedBubbles[bubbleIndex + 1] = tempBubble;
       setBubbles(updatedBubbles);
-
-      // Sauvegarder l'ensemble des bulles après avoir effectué les modifications d'ordre
-      saveMindMapsToLocalStorage(updatedBubbles);
+      saveMindMapsToIndexedDB(updatedBubbles);
     }
   };
 
@@ -149,8 +171,9 @@ const MindMap = () => {
       )
     );
   };
+
   const handleSave = () => {
-    saveMindMapsToLocalStorage(bubbles);
+    saveMindMapsToIndexedDB(bubbles);
     alert("Map sauvegardée");
   };
 
