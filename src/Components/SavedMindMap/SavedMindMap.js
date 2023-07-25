@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { openDB, wrap, unwrap } from "idb";
+import { openDB, wrap } from "idb";
 import "./SavedMindMap.scss";
 
 const SavedMindMap = () => {

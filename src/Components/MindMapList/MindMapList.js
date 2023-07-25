@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { openDB, wrap, unwrap } from "idb";
+import { openDB, wrap } from "idb";
 import "./MindMapList.scss";
 
 const MindMapList = () => {
@@ -18,7 +18,24 @@ const MindMapList = () => {
           console.error("Error getting saved mind maps:", error);
           return [];
         });
-      setSavedMindMaps(savedMindMaps);
+
+      // Pour chaque carte mentale, récupérer les bulles associées
+      const mappedMindMaps = await Promise.all(
+        savedMindMaps.map(async (map) => {
+          const mapBubbles = await wrap(db)
+            .getAll("bubbles", map.id)
+            .catch((error) => {
+              console.error("Error getting saved bubbles:", error);
+              return [];
+            });
+          return {
+            ...map,
+            bubbles: mapBubbles,
+          };
+        })
+      );
+
+      setSavedMindMaps(mappedMindMaps);
     };
 
     getMindMapsFromIndexedDB();
