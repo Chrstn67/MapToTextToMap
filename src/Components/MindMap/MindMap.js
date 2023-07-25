@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from "react";
-import { openDB, deleteDB, wrap, unwrap } from "idb";
+import React, { useState, useEffect, useRef } from "react";
+import { openDB } from "idb";
+import { nanoid } from 'nanoid'
 import "./MindMap.scss";
 
 const MindMap = () => {
-  const [maps, setMaps] = useState([]);
+  const mapId = useRef(null);
+  const [bubbles, setBubbles] = useState([]);
   const [mapTitle, setMapTitle] = useState("Titre de la carte mentale");
   const [keywordMode, setKeywordMode] = useState(false); // État pour le mode "mots-clés"
   const [selectedKeywords, setSelectedKeywords] = useState([]); // État pour les mots-clés sélectionnés
@@ -11,65 +13,60 @@ const MindMap = () => {
   const DB_STORE_NAME = "mindMaps";
 
   useEffect(() => {
+    if(!mapId.current) {
+      mapId.current = nanoid();
+    }
+
     // Fonction pour récupérer les cartes mentales depuis IndexedDB
     const getMindMapsFromIndexedDB = async () => {
       const DB_NAME = "mindMapDB";
       const DB_STORE_NAME = "mindMaps";
-      const db = await openDB(DB_NAME, 1);
-      const savedMindMaps = await wrap(db)
-        .getAll(DB_STORE_NAME)
-        .catch((error) => {
+      const db = await openDB(DB_NAME, 1, {
+        upgrade(db) {
+          db.createObjectStore(DB_STORE_NAME, {
+            // The 'id' property of the object will be the key.
+            keyPath: 'id',
+          });
+        },
+      });
+
+        try {
+          const savedMindMaps = await db
+          .get(DB_STORE_NAME, mapId.current)
+
+          console.debug("savedMindMaps", savedMindMaps)
+
+          if(Array.isArray(savedMindMaps?.bubbles)) {
+            setBubbles(savedMindMaps.bubbles);
+          } else {
+            setBubbles([])
+          }
+        } catch(error) {
           console.error("Error getting saved mind maps:", error);
-          return [];
-        });
-
-      // Pour chaque carte mentale, récupérer les bulles associées
-      const mappedMindMaps = await Promise.all(
-        savedMindMaps.map(async (map) => {
-          const mapBubbles = await wrap(db)
-            .getAll("bubbles", map.id)
-            .catch((error) => {
-              console.error("Error getting saved bubbles:", error);
-              return [];
-            });
-          return {
-            ...map,
-            bubbles: mapBubbles,
-          };
-        })
-      );
-
-      setMaps(mappedMindMaps);
+          setBubbles([]);
+        }
     };
 
     getMindMapsFromIndexedDB();
   }, []);
 
   // Fonction pour sauvegarder les mind maps dans IndexedDB
-  const saveMindMapsToIndexedDB = async (maps) => {
+  const saveMindMapsToIndexedDB = async (bubbles) => {
     const db = await openDB(DB_NAME, 1);
-    const tx = db.transaction(DB_STORE_NAME, "readwrite");
-    const store = tx.objectStore(DB_STORE_NAME);
-    // Supprimer toutes les cartes mentales existantes dans IndexedDB
-    await store.clear();
-    // Ajouter les nouvelles cartes mentales dans IndexedDB
-    await Promise.all(
-      maps.map(async (map) => {
-        await store.put({
-          ...map,
-          title: mapTitle, // Ajouter le titre dans l'objet map
-        });
-        // Enregistrer les bulles associées à chaque carte mentale
-        await Promise.all(
-          map.bubbles.map((bubble) =>
-            store.put({
-              ...bubble,
-              mapId: map.id, // Ajouter l'ID de la carte mentale à la bulle
-            })
-          )
-        );
-      })
-    );
+    // const tx = db.transaction(DB_STORE_NAME, "readwrite");
+    // const store = tx.objectStore(DB_STORE_NAME);
+
+    const newMap = {
+      id: mapId.current,
+      title: mapTitle, // Ajouter le titre dans l'objet map
+      bubbles
+    }
+
+    await db.delete(DB_STORE_NAME, mapId.current);
+
+    // Update the map
+    // await store.put(newMap);
+    await db.add(DB_STORE_NAME, newMap)
   };
 
   const handleMapTitleChange = (e) => {
@@ -77,97 +74,64 @@ const MindMap = () => {
   };
 
   const addBubble = () => {
-    // Vérifier si une carte mentale avec le même titre existe déjà
-    const existingMap = maps.find((map) => map.title === mapTitle);
+    // I KNOW, IT'S UGLY, BUT NO TIME, I WANT TO SLEEP
+    const newBubble = {
+      id: nanoid(),
+      type: "full-text",
+      text: "Nouveau texte complet",
+      keywords: [],
+      importance: "normal",
+    };
 
-    // Si une carte mentale avec le même titre existe, ajouter la bulle à cette carte
-    if (existingMap) {
-      const newBubble = {
-        id: Date.now(),
-        type: "full-text",
-        text: "Nouveau texte complet",
-        keywords: [],
-        importance: "normal",
-      };
+    const newBubbles = [...bubbles, newBubble]
 
-      setMaps((prevMaps) =>
-        prevMaps.map((map) =>
-          map.id === existingMap.id
-            ? { ...map, bubbles: [...map.bubbles, newBubble] }
-            : map
-        )
-      );
-      // Sauvegarder les cartes mentales dans IndexedDB
-      saveMindMapsToIndexedDB([...maps, existingMap]);
-    } else {
-      // Si aucune carte mentale avec le même titre existe, créer une nouvelle carte mentale avec la bulle
-      const newBubble = {
-        id: Date.now(),
-        type: "full-text",
-        text: "Nouveau texte complet",
-        keywords: [],
-        importance: "normal",
-      };
+    setBubbles(newBubbles);
+    // Sauvegarder les cartes mentales dans IndexedDB
+    saveMindMapsToIndexedDB(newBubbles);
+  };
 
-      const newMap = {
-        id: Date.now(),
-        title: mapTitle,
-        bubbles: [newBubble],
-      };
+  const updateBubble = (bubbleId, text) => {
+    const updatedMaps = bubbles.map((bubble) => {
+      if(bubble.id === bubbleId)  {
+        return {
+          ...bubble,
+          text
+        }
+      }
 
-      setMaps([...maps, newMap]);
-      // Sauvegarder les cartes mentales dans IndexedDB
-      saveMindMapsToIndexedDB([...maps, newMap]);
+      return bubble
+    });
+    setBubbles(updatedMaps);
+    saveMindMapsToIndexedDB(updatedMaps);
+  };
+
+  const handleImportanceChange = (bubbleId, importance) => {
+    const updatedMaps = bubbles.map((bubble) => {
+      if(bubble.id === bubbleId)  {
+        return {
+          ...bubble,
+          importance
+        }
+      }
+
+      return bubble
     }
-  };
-
-  const updateBubble = (mapId, bubbleId, text) => {
-    const updatedMaps = maps.map((map) =>
-      map.id === mapId
-        ? {
-            ...map,
-            bubbles: map.bubbles.map((bubble) =>
-              bubble.id === bubbleId ? { ...bubble, text } : bubble
-            ),
-          }
-        : map
     );
-    setMaps(updatedMaps);
+    setBubbles(updatedMaps);
     saveMindMapsToIndexedDB(updatedMaps);
   };
 
-  const handleImportanceChange = (mapId, bubbleId, importance) => {
-    const updatedMaps = maps.map((map) =>
-      map.id === mapId
-        ? {
-            ...map,
-            bubbles: map.bubbles.map((bubble) =>
-              bubble.id === bubbleId ? { ...bubble, importance } : bubble
-            ),
-          }
-        : map
-    );
-    setMaps(updatedMaps);
-    saveMindMapsToIndexedDB(updatedMaps);
-  };
-
-  const deleteBubble = (mapId, bubbleId) => {
-    const updatedMaps = maps.map((map) =>
-      map.id === mapId
-        ? {
-            ...map,
-            bubbles: map.bubbles.filter((bubble) => bubble.id !== bubbleId),
-          }
-        : map
-    );
-    setMaps(updatedMaps);
+  const deleteBubble = (bubbleId) => {
+    const updatedMaps = bubbles.filter(bubble => bubble !== bubbleId);
+    setBubbles(updatedMaps);
     saveMindMapsToIndexedDB(updatedMaps);
   };
 
   const moveBubbleBefore = (mapId, bubbleId) => {
-    const mapIndex = maps.findIndex((map) => map.id === mapId);
+    // TODO: handle this on bubbles
+    const mapIndex = bubbles.findIndex((map) => map.id === mapId);
     if (mapIndex > 0) {
-      const updatedMaps = [...maps];
+      const updatedMaps = [...bubbles];
       const map = updatedMaps[mapIndex];
       const bubbleIndex = map.bubbles.findIndex(
         (bubble) => bubble.id === bubbleId
@@ -176,16 +140,17 @@ const MindMap = () => {
         const tempBubble = map.bubbles[bubbleIndex];
         map.bubbles[bubbleIndex] = map.bubbles[bubbleIndex - 1];
         map.bubbles[bubbleIndex - 1] = tempBubble;
-        setMaps(updatedMaps);
+        setBubbles(updatedMaps);
         saveMindMapsToIndexedDB(updatedMaps);
       }
     }
   };
 
   const moveBubbleAfter = (mapId, bubbleId) => {
-    const mapIndex = maps.findIndex((map) => map.id === mapId);
-    if (mapIndex < maps.length - 1) {
-      const updatedMaps = [...maps];
+    // TODO: handle this on bubbles
+    const mapIndex = bubbles.findIndex((map) => map.id === mapId);
+    if (mapIndex < bubbles.length - 1) {
+      const updatedMaps = [...bubbles];
       const map = updatedMaps[mapIndex];
       const bubbleIndex = map.bubbles.findIndex(
         (bubble) => bubble.id === bubbleId
@@ -194,7 +159,7 @@ const MindMap = () => {
         const tempBubble = map.bubbles[bubbleIndex];
         map.bubbles[bubbleIndex] = map.bubbles[bubbleIndex + 1];
         map.bubbles[bubbleIndex + 1] = tempBubble;
-        setMaps(updatedMaps);
+        setBubbles(updatedMaps);
         saveMindMapsToIndexedDB(updatedMaps);
       }
     }
@@ -212,77 +177,62 @@ const MindMap = () => {
     );
   };
 
-  const addKeywordToBubble = (mapId, bubbleId, keyword) => {
-    const updatedMaps = maps.map((map) =>
-      map.id === mapId
-        ? {
-            ...map,
-            bubbles: map.bubbles.map((bubble) =>
-              bubble.id === bubbleId
-                ? {
-                    ...bubble,
-                    keywords: [
-                      ...bubble.keywords,
-                      { id: Date.now(), value: keyword },
-                    ],
-                  }
-                : bubble
-            ),
-          }
-        : map
-    );
-    setMaps(updatedMaps);
+  const addKeywordToBubble = (bubbleId, keyword) => {
+    const updatedBubbles = bubbles.map((bubble) => {
+      if(bubble.id === bubbleId) {
+        return {
+          ...bubble,
+          keywords: [
+            ...bubble.keywords,
+            { id: nanoid(), value: keyword },
+          ]
+        }
+      }
+
+      return bubble;
+    });
+    setBubbles(updatedBubbles);
+    saveMindMapsToIndexedDB(updatedBubbles);
+  };
+
+  const updateKeywordInBubble = (bubbleId, keywordId, newKeyword) => {
+    const updatedMaps = bubbles.map((bubble) =>{
+      if(bubble.id === bubbleId) {
+        return {
+          ...bubble,
+          keywords: bubble.keywords.map((keyword) =>
+                    keyword.id === keywordId
+                      ? { ...keyword, value: newKeyword }
+                      : keyword
+                  ),
+        }
+      }
+      
+      return bubble;
+    });
+    setBubbles(updatedMaps);
     saveMindMapsToIndexedDB(updatedMaps);
   };
 
-  const updateKeywordInBubble = (mapId, bubbleId, keywordId, newKeyword) => {
-    const updatedMaps = maps.map((map) =>
-      map.id === mapId
-        ? {
-            ...map,
-            bubbles: map.bubbles.map((bubble) =>
-              bubble.id === bubbleId
-                ? {
-                    ...bubble,
-                    keywords: bubble.keywords.map((keyword) =>
-                      keyword.id === keywordId
-                        ? { ...keyword, value: newKeyword }
-                        : keyword
-                    ),
-                  }
-                : bubble
-            ),
-          }
-        : map
-    );
-    setMaps(updatedMaps);
-    saveMindMapsToIndexedDB(updatedMaps);
-  };
+  const deleteKeywordFromBubble = (bubbleId, keywordId) => {
+    const updatedMaps = bubbles.map((bubble) => {
+      if(bubble.id === bubbleId) {
+        return {
+          ...bubble,
+          keywords: bubble.keywords.filter(
+            (keyword) => keyword.id !== keywordId
+          ),
+        }
+      }
 
-  const deleteKeywordFromBubble = (mapId, bubbleId, keywordId) => {
-    const updatedMaps = maps.map((map) =>
-      map.id === mapId
-        ? {
-            ...map,
-            bubbles: map.bubbles.map((bubble) =>
-              bubble.id === bubbleId
-                ? {
-                    ...bubble,
-                    keywords: bubble.keywords.filter(
-                      (keyword) => keyword.id !== keywordId
-                    ),
-                  }
-                : bubble
-            ),
-          }
-        : map
-    );
-    setMaps(updatedMaps);
+      return bubble
+    });
+    setBubbles(updatedMaps);
     saveMindMapsToIndexedDB(updatedMaps);
   };
 
   const handleSave = () => {
-    saveMindMapsToIndexedDB(maps);
+    saveMindMapsToIndexedDB(bubbles);
     alert("Map sauvegardée");
   };
 
@@ -309,10 +259,10 @@ const MindMap = () => {
         </button>
       </div>
 
-      {maps.map((map) => (
-        <div key={map.id} className="map">
-          <h2>{map.title}</h2>
-          {map.bubbles.map((bubble) => (
+
+        <div className="map">
+          <h2>{mapTitle}</h2>
+          {bubbles.map((bubble) => (
             <div
               key={bubble.id}
               className={`bubble ${bubble.importance}`}
@@ -337,17 +287,21 @@ const MindMap = () => {
                     ))}
                   </div>
                   <div className="bubble-actions">
-                    <button onClick={() => deleteBubble(map.id, bubble.id)}>
+                    <button onClick={() => deleteBubble(bubble.id)}>
                       <span role="img" aria-label="Delete">
                         ❌
                       </span>
                     </button>
-                    <button onClick={() => moveBubbleBefore(map.id, bubble.id)}>
+                    <button 
+                    // onClick={() => moveBubbleBefore(map.id, bubble.id)}
+                    >
                       <span role="img" aria-label="Move before">
                         ⬆️
                       </span>
                     </button>
-                    <button onClick={() => moveBubbleAfter(map.id, bubble.id)}>
+                    <button 
+                    // onClick={() => moveBubbleAfter(map.id, bubble.id)}
+                    >
                       <span role="img" aria-label="Move after">
                         ⬇️
                       </span>
@@ -361,7 +315,7 @@ const MindMap = () => {
                         value="normal"
                         checked={bubble.importance === "normal"}
                         onChange={() =>
-                          handleImportanceChange(map.id, bubble.id, "normal")
+                          handleImportanceChange(bubble.id, "normal")
                         }
                       />
                       Normal
@@ -372,7 +326,7 @@ const MindMap = () => {
                         value="important"
                         checked={bubble.importance === "important"}
                         onChange={() =>
-                          handleImportanceChange(map.id, bubble.id, "important")
+                          handleImportanceChange(bubble.id, "important")
                         }
                       />
                       Important
@@ -384,7 +338,6 @@ const MindMap = () => {
                         checked={bubble.importance === "very-important"}
                         onChange={() =>
                           handleImportanceChange(
-                            map.id,
                             bubble.id,
                             "very-important"
                           )
@@ -398,7 +351,7 @@ const MindMap = () => {
                         value="example"
                         checked={bubble.importance === "example"}
                         onChange={() =>
-                          handleImportanceChange(map.id, bubble.id, "example")
+                          handleImportanceChange(bubble.id, "example")
                         }
                       />
                       Exemple
@@ -409,7 +362,7 @@ const MindMap = () => {
                         value="citation"
                         checked={bubble.importance === "citation"}
                         onChange={() =>
-                          handleImportanceChange(map.id, bubble.id, "citation")
+                          handleImportanceChange(bubble.id, "citation")
                         }
                       />
                       Citation
@@ -422,21 +375,25 @@ const MindMap = () => {
                   <textarea
                     value={bubble.text}
                     onChange={(e) =>
-                      updateBubble(map.id, bubble.id, e.target.value)
+                      updateBubble(bubble.id, e.target.value)
                     }
                   />
                   <div className="bubble-actions">
-                    <button onClick={() => deleteBubble(map.id, bubble.id)}>
+                    <button onClick={() => deleteBubble(bubble.id)}>
                       <span role="img" aria-label="Delete">
                         ❌
                       </span>
                     </button>
-                    <button onClick={() => moveBubbleBefore(map.id, bubble.id)}>
+                    <button 
+                    // onClick={() => moveBubbleBefore(map.id, bubble.id)}
+                    >
                       <span role="img" aria-label="Move before">
                         ⬆️
                       </span>
                     </button>
-                    <button onClick={() => moveBubbleAfter(map.id, bubble.id)}>
+                    <button 
+                    // onClick={() => moveBubbleAfter(map.id, bubble.id)}
+                    >
                       <span role="img" aria-label="Move after">
                         ⬇️
                       </span>
@@ -450,7 +407,7 @@ const MindMap = () => {
                         value="normal"
                         checked={bubble.importance === "normal"}
                         onChange={() =>
-                          handleImportanceChange(map.id, bubble.id, "normal")
+                          handleImportanceChange(bubble.id, "normal")
                         }
                       />
                       Normal
@@ -461,7 +418,7 @@ const MindMap = () => {
                         value="important"
                         checked={bubble.importance === "important"}
                         onChange={() =>
-                          handleImportanceChange(map.id, bubble.id, "important")
+                          handleImportanceChange(bubble.id, "important")
                         }
                       />
                       Important
@@ -473,7 +430,6 @@ const MindMap = () => {
                         checked={bubble.importance === "very-important"}
                         onChange={() =>
                           handleImportanceChange(
-                            map.id,
                             bubble.id,
                             "very-important"
                           )
@@ -487,7 +443,7 @@ const MindMap = () => {
                         value="example"
                         checked={bubble.importance === "example"}
                         onChange={() =>
-                          handleImportanceChange(map.id, bubble.id, "example")
+                          handleImportanceChange(bubble.id, "example")
                         }
                       />
                       Exemple
@@ -498,7 +454,7 @@ const MindMap = () => {
                         value="citation"
                         checked={bubble.importance === "citation"}
                         onChange={() =>
-                          handleImportanceChange(map.id, bubble.id, "citation")
+                          handleImportanceChange(bubble.id, "citation")
                         }
                       />
                       Citation
@@ -508,7 +464,7 @@ const MindMap = () => {
                     <h3>Mots-clés :</h3>
                     <button
                       onClick={() =>
-                        addKeywordToBubble(map.id, bubble.id, "Nouveau mot-clé")
+                        addKeywordToBubble(bubble.id, "Nouveau mot-clé")
                       }
                     >
                       Ajouter mot-clé
@@ -520,7 +476,6 @@ const MindMap = () => {
                           value={keyword.value}
                           onChange={(e) =>
                             updateKeywordInBubble(
-                              map.id,
                               bubble.id,
                               keyword.id,
                               e.target.value
@@ -530,7 +485,6 @@ const MindMap = () => {
                         <button
                           onClick={() =>
                             deleteKeywordFromBubble(
-                              map.id,
                               bubble.id,
                               keyword.id
                             )
@@ -546,7 +500,6 @@ const MindMap = () => {
             </div>
           ))}
         </div>
-      ))}
     </div>
   );
 };

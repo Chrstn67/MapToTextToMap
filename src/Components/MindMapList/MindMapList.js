@@ -19,23 +19,7 @@ const MindMapList = () => {
           return [];
         });
 
-      // Pour chaque carte mentale, récupérer les bulles associées
-      const mappedMindMaps = await Promise.all(
-        savedMindMaps.map(async (map) => {
-          const mapBubbles = await wrap(db)
-            .getAll("bubbles", map.id)
-            .catch((error) => {
-              console.error("Error getting saved bubbles:", error);
-              return [];
-            });
-          return {
-            ...map,
-            bubbles: mapBubbles,
-          };
-        })
-      );
-
-      setSavedMindMaps(mappedMindMaps);
+      setSavedMindMaps(savedMindMaps);
     };
 
     getMindMapsFromIndexedDB();
