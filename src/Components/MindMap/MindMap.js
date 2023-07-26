@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { openDB } from "idb";
-import { nanoid } from 'nanoid'
+import { nanoid } from "nanoid";
 import "./MindMap.scss";
 
 const MindMap = () => {
@@ -13,7 +13,7 @@ const MindMap = () => {
   const DB_STORE_NAME = "mindMaps";
 
   useEffect(() => {
-    if(!mapId.current) {
+    if (!mapId.current) {
       mapId.current = nanoid();
     }
 
@@ -25,26 +25,25 @@ const MindMap = () => {
         upgrade(db) {
           db.createObjectStore(DB_STORE_NAME, {
             // The 'id' property of the object will be the key.
-            keyPath: 'id',
+            keyPath: "id",
           });
         },
       });
 
-        try {
-          const savedMindMaps = await db
-          .get(DB_STORE_NAME, mapId.current)
+      try {
+        const savedMindMaps = await db.get(DB_STORE_NAME, mapId.current);
 
-          console.debug("savedMindMaps", savedMindMaps)
+        console.debug("savedMindMaps", savedMindMaps);
 
-          if(Array.isArray(savedMindMaps?.bubbles)) {
-            setBubbles(savedMindMaps.bubbles);
-          } else {
-            setBubbles([])
-          }
-        } catch(error) {
-          console.error("Error getting saved mind maps:", error);
+        if (Array.isArray(savedMindMaps?.bubbles)) {
+          setBubbles(savedMindMaps.bubbles);
+        } else {
           setBubbles([]);
         }
+      } catch (error) {
+        console.error("Error getting saved mind maps:", error);
+        setBubbles([]);
+      }
     };
 
     getMindMapsFromIndexedDB();
@@ -59,14 +58,14 @@ const MindMap = () => {
     const newMap = {
       id: mapId.current,
       title: mapTitle, // Ajouter le titre dans l'objet map
-      bubbles
-    }
+      bubbles,
+    };
 
     await db.delete(DB_STORE_NAME, mapId.current);
 
     // Update the map
     // await store.put(newMap);
-    await db.add(DB_STORE_NAME, newMap)
+    await db.add(DB_STORE_NAME, newMap);
   };
 
   const handleMapTitleChange = (e) => {
@@ -83,7 +82,7 @@ const MindMap = () => {
       importance: "normal",
     };
 
-    const newBubbles = [...bubbles, newBubble]
+    const newBubbles = [...bubbles, newBubble];
 
     setBubbles(newBubbles);
     // Sauvegarder les cartes mentales dans IndexedDB
@@ -92,77 +91,72 @@ const MindMap = () => {
 
   const updateBubble = (bubbleId, text) => {
     const updatedMaps = bubbles.map((bubble) => {
-      if(bubble.id === bubbleId)  {
+      if (bubble.id === bubbleId) {
         return {
           ...bubble,
-          text
-        }
+          text,
+        };
       }
 
-      return bubble
+      return bubble;
     });
     setBubbles(updatedMaps);
     saveMindMapsToIndexedDB(updatedMaps);
   };
 
+  const deleteBubble = (bubbleId) => {
+    const updatedBubbles = bubbles.filter((bubble) => bubble.id !== bubbleId);
+    setBubbles(updatedBubbles);
+    saveMindMapsToIndexedDB(updatedBubbles);
+  };
+
+  const moveBubbleBefore = (currentBubbleId, targetBubbleId) => {
+    const currentBubbleIndex = bubbles.findIndex(
+      (bubble) => bubble.id === currentBubbleId
+    );
+    const targetBubbleIndex = bubbles.findIndex(
+      (bubble) => bubble.id === targetBubbleId
+    );
+
+    if (currentBubbleIndex !== -1 && targetBubbleIndex !== -1) {
+      const newBubbles = [...bubbles];
+      const [removedBubble] = newBubbles.splice(currentBubbleIndex, 1);
+      newBubbles.splice(targetBubbleIndex, 0, removedBubble);
+      setBubbles(newBubbles);
+      saveMindMapsToIndexedDB(newBubbles);
+    }
+  };
+
+  const moveBubbleAfter = (currentBubbleId, targetBubbleId) => {
+    const currentBubbleIndex = bubbles.findIndex(
+      (bubble) => bubble.id === currentBubbleId
+    );
+    const targetBubbleIndex = bubbles.findIndex(
+      (bubble) => bubble.id === targetBubbleId
+    );
+
+    if (currentBubbleIndex !== -1 && targetBubbleIndex !== -1) {
+      const newBubbles = [...bubbles];
+      const [removedBubble] = newBubbles.splice(currentBubbleIndex, 1);
+      newBubbles.splice(targetBubbleIndex + 1, 0, removedBubble);
+      setBubbles(newBubbles);
+      saveMindMapsToIndexedDB(newBubbles);
+    }
+  };
+
   const handleImportanceChange = (bubbleId, importance) => {
     const updatedMaps = bubbles.map((bubble) => {
-      if(bubble.id === bubbleId)  {
+      if (bubble.id === bubbleId) {
         return {
           ...bubble,
-          importance
-        }
+          importance,
+        };
       }
 
-      return bubble
-    }
-    );
+      return bubble;
+    });
     setBubbles(updatedMaps);
     saveMindMapsToIndexedDB(updatedMaps);
-  };
-
-  const deleteBubble = (bubbleId) => {
-    const updatedMaps = bubbles.filter(bubble => bubble !== bubbleId);
-    setBubbles(updatedMaps);
-    saveMindMapsToIndexedDB(updatedMaps);
-  };
-
-  const moveBubbleBefore = (mapId, bubbleId) => {
-    // TODO: handle this on bubbles
-    const mapIndex = bubbles.findIndex((map) => map.id === mapId);
-    if (mapIndex > 0) {
-      const updatedMaps = [...bubbles];
-      const map = updatedMaps[mapIndex];
-      const bubbleIndex = map.bubbles.findIndex(
-        (bubble) => bubble.id === bubbleId
-      );
-      if (bubbleIndex > 0) {
-        const tempBubble = map.bubbles[bubbleIndex];
-        map.bubbles[bubbleIndex] = map.bubbles[bubbleIndex - 1];
-        map.bubbles[bubbleIndex - 1] = tempBubble;
-        setBubbles(updatedMaps);
-        saveMindMapsToIndexedDB(updatedMaps);
-      }
-    }
-  };
-
-  const moveBubbleAfter = (mapId, bubbleId) => {
-    // TODO: handle this on bubbles
-    const mapIndex = bubbles.findIndex((map) => map.id === mapId);
-    if (mapIndex < bubbles.length - 1) {
-      const updatedMaps = [...bubbles];
-      const map = updatedMaps[mapIndex];
-      const bubbleIndex = map.bubbles.findIndex(
-        (bubble) => bubble.id === bubbleId
-      );
-      if (bubbleIndex < map.bubbles.length - 1) {
-        const tempBubble = map.bubbles[bubbleIndex];
-        map.bubbles[bubbleIndex] = map.bubbles[bubbleIndex + 1];
-        map.bubbles[bubbleIndex + 1] = tempBubble;
-        setBubbles(updatedMaps);
-        saveMindMapsToIndexedDB(updatedMaps);
-      }
-    }
   };
 
   const handleKeywordModeChange = () => {
@@ -179,14 +173,11 @@ const MindMap = () => {
 
   const addKeywordToBubble = (bubbleId, keyword) => {
     const updatedBubbles = bubbles.map((bubble) => {
-      if(bubble.id === bubbleId) {
+      if (bubble.id === bubbleId) {
         return {
           ...bubble,
-          keywords: [
-            ...bubble.keywords,
-            { id: nanoid(), value: keyword },
-          ]
-        }
+          keywords: [...bubble.keywords, { id: nanoid(), value: keyword }],
+        };
       }
 
       return bubble;
@@ -196,18 +187,18 @@ const MindMap = () => {
   };
 
   const updateKeywordInBubble = (bubbleId, keywordId, newKeyword) => {
-    const updatedMaps = bubbles.map((bubble) =>{
-      if(bubble.id === bubbleId) {
+    const updatedMaps = bubbles.map((bubble) => {
+      if (bubble.id === bubbleId) {
         return {
           ...bubble,
           keywords: bubble.keywords.map((keyword) =>
-                    keyword.id === keywordId
-                      ? { ...keyword, value: newKeyword }
-                      : keyword
-                  ),
-        }
+            keyword.id === keywordId
+              ? { ...keyword, value: newKeyword }
+              : keyword
+          ),
+        };
       }
-      
+
       return bubble;
     });
     setBubbles(updatedMaps);
@@ -216,16 +207,16 @@ const MindMap = () => {
 
   const deleteKeywordFromBubble = (bubbleId, keywordId) => {
     const updatedMaps = bubbles.map((bubble) => {
-      if(bubble.id === bubbleId) {
+      if (bubble.id === bubbleId) {
         return {
           ...bubble,
           keywords: bubble.keywords.filter(
             (keyword) => keyword.id !== keywordId
           ),
-        }
+        };
       }
 
-      return bubble
+      return bubble;
     });
     setBubbles(updatedMaps);
     saveMindMapsToIndexedDB(updatedMaps);
@@ -259,247 +250,231 @@ const MindMap = () => {
         </button>
       </div>
 
-
-        <div className="map">
-          <h2>{mapTitle}</h2>
-          {bubbles.map((bubble) => (
-            <div
-              key={bubble.id}
-              className={`bubble ${bubble.importance}`}
-              style={{ width: `${bubble.text.length * 1.5}em` }}
-            >
-              {keywordMode ? (
-                // Mode "mots-clés"
-                <>
-                  <div className="keyword-text">
-                    {bubble.keywords.map((keyword) => (
-                      <span
-                        key={keyword.id}
-                        className={`keyword ${
-                          selectedKeywords.includes(keyword.value)
-                            ? "selected"
-                            : ""
-                        }`}
-                        onClick={() => handleKeywordSelection(keyword.value)}
-                      >
-                        {keyword.value}
-                      </span>
-                    ))}
-                  </div>
-                  <div className="bubble-actions">
-                    <button onClick={() => deleteBubble(bubble.id)}>
-                      <span role="img" aria-label="Delete">
-                        ❌
-                      </span>
-                    </button>
-                    <button 
-                    // onClick={() => moveBubbleBefore(map.id, bubble.id)}
+      <div className="map">
+        <h2>{mapTitle}</h2>
+        {bubbles.map((bubble) => (
+          <div
+            key={bubble.id}
+            className={`bubble ${bubble.importance}`}
+            style={{ width: `${bubble.text.length * 1.5}em` }}
+          >
+            {keywordMode ? (
+              // Mode "mots-clés"
+              <>
+                <div className="keyword-text">
+                  {bubble.keywords.map((keyword) => (
+                    <span
+                      key={keyword.id}
+                      className={`keyword ${
+                        selectedKeywords.includes(keyword.value)
+                          ? "selected"
+                          : ""
+                      }`}
+                      onClick={() => handleKeywordSelection(keyword.value)}
                     >
-                      <span role="img" aria-label="Move before">
-                        ⬆️
-                      </span>
-                    </button>
-                    <button 
-                    // onClick={() => moveBubbleAfter(map.id, bubble.id)}
-                    >
-                      <span role="img" aria-label="Move after">
-                        ⬇️
-                      </span>
-                    </button>
-                  </div>
-                  <div className="bubble-type">
-                    {/* Boutons radio pour l'importance */}
-                    <label>
-                      <input
-                        type="radio"
-                        value="normal"
-                        checked={bubble.importance === "normal"}
-                        onChange={() =>
-                          handleImportanceChange(bubble.id, "normal")
-                        }
-                      />
-                      Normal
-                    </label>
-                    <label>
-                      <input
-                        type="radio"
-                        value="important"
-                        checked={bubble.importance === "important"}
-                        onChange={() =>
-                          handleImportanceChange(bubble.id, "important")
-                        }
-                      />
-                      Important
-                    </label>
-                    <label>
-                      <input
-                        type="radio"
-                        value="very-important"
-                        checked={bubble.importance === "very-important"}
-                        onChange={() =>
-                          handleImportanceChange(
-                            bubble.id,
-                            "very-important"
-                          )
-                        }
-                      />
-                      Très important
-                    </label>
-                    <label>
-                      <input
-                        type="radio"
-                        value="example"
-                        checked={bubble.importance === "example"}
-                        onChange={() =>
-                          handleImportanceChange(bubble.id, "example")
-                        }
-                      />
-                      Exemple
-                    </label>
-                    <label>
-                      <input
-                        type="radio"
-                        value="citation"
-                        checked={bubble.importance === "citation"}
-                        onChange={() =>
-                          handleImportanceChange(bubble.id, "citation")
-                        }
-                      />
-                      Citation
-                    </label>
-                  </div>
-                </>
-              ) : (
-                // Mode texte complet
-                <>
-                  <textarea
-                    value={bubble.text}
-                    onChange={(e) =>
-                      updateBubble(bubble.id, e.target.value)
-                    }
-                  />
-                  <div className="bubble-actions">
-                    <button onClick={() => deleteBubble(bubble.id)}>
-                      <span role="img" aria-label="Delete">
-                        ❌
-                      </span>
-                    </button>
-                    <button 
-                    // onClick={() => moveBubbleBefore(map.id, bubble.id)}
-                    >
-                      <span role="img" aria-label="Move before">
-                        ⬆️
-                      </span>
-                    </button>
-                    <button 
-                    // onClick={() => moveBubbleAfter(map.id, bubble.id)}
-                    >
-                      <span role="img" aria-label="Move after">
-                        ⬇️
-                      </span>
-                    </button>
-                  </div>
-                  <div className="bubble-type">
-                    {/* Boutons radio pour l'importance */}
-                    <label>
-                      <input
-                        type="radio"
-                        value="normal"
-                        checked={bubble.importance === "normal"}
-                        onChange={() =>
-                          handleImportanceChange(bubble.id, "normal")
-                        }
-                      />
-                      Normal
-                    </label>
-                    <label>
-                      <input
-                        type="radio"
-                        value="important"
-                        checked={bubble.importance === "important"}
-                        onChange={() =>
-                          handleImportanceChange(bubble.id, "important")
-                        }
-                      />
-                      Important
-                    </label>
-                    <label>
-                      <input
-                        type="radio"
-                        value="very-important"
-                        checked={bubble.importance === "very-important"}
-                        onChange={() =>
-                          handleImportanceChange(
-                            bubble.id,
-                            "very-important"
-                          )
-                        }
-                      />
-                      Très important
-                    </label>
-                    <label>
-                      <input
-                        type="radio"
-                        value="example"
-                        checked={bubble.importance === "example"}
-                        onChange={() =>
-                          handleImportanceChange(bubble.id, "example")
-                        }
-                      />
-                      Exemple
-                    </label>
-                    <label>
-                      <input
-                        type="radio"
-                        value="citation"
-                        checked={bubble.importance === "citation"}
-                        onChange={() =>
-                          handleImportanceChange(bubble.id, "citation")
-                        }
-                      />
-                      Citation
-                    </label>
-                  </div>
-                  <div className="keywords-container">
-                    <h3>Mots-clés :</h3>
-                    <button
-                      onClick={() =>
-                        addKeywordToBubble(bubble.id, "Nouveau mot-clé")
+                      {keyword.value}
+                    </span>
+                  ))}
+                </div>
+                <div className="bubble-actions">
+                  <button onClick={() => deleteBubble(bubble.id)}>
+                    <span role="img" aria-label="Delete">
+                      ❌
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => moveBubbleBefore(bubble.id, bubble.id)}
+                  >
+                    <span role="img" aria-label="Move before">
+                      ⬆️
+                    </span>
+                  </button>
+                  <button onClick={() => moveBubbleAfter(bubble.id, bubble.id)}>
+                    <span role="img" aria-label="Move after">
+                      ⬇️
+                    </span>
+                  </button>
+                </div>
+                <div className="bubble-type">
+                  {/* Boutons radio pour l'importance */}
+                  <label>
+                    <input
+                      type="radio"
+                      value="normal"
+                      checked={bubble.importance === "normal"}
+                      onChange={() =>
+                        handleImportanceChange(bubble.id, "normal")
                       }
-                    >
-                      Ajouter mot-clé
-                    </button>
-                    {bubble.keywords.map((keyword) => (
-                      <div key={keyword.id} className="keyword-item">
-                        <input
-                          type="text"
-                          value={keyword.value}
-                          onChange={(e) =>
-                            updateKeywordInBubble(
-                              bubble.id,
-                              keyword.id,
-                              e.target.value
-                            )
-                          }
-                        />
-                        <button
-                          onClick={() =>
-                            deleteKeywordFromBubble(
-                              bubble.id,
-                              keyword.id
-                            )
-                          }
-                        >
-                          Supprimer
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          ))}
-        </div>
+                    />
+                    Normal
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      value="important"
+                      checked={bubble.importance === "important"}
+                      onChange={() =>
+                        handleImportanceChange(bubble.id, "important")
+                      }
+                    />
+                    Important
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      value="very-important"
+                      checked={bubble.importance === "very-important"}
+                      onChange={() =>
+                        handleImportanceChange(bubble.id, "very-important")
+                      }
+                    />
+                    Très important
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      value="example"
+                      checked={bubble.importance === "example"}
+                      onChange={() =>
+                        handleImportanceChange(bubble.id, "example")
+                      }
+                    />
+                    Exemple
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      value="citation"
+                      checked={bubble.importance === "citation"}
+                      onChange={() =>
+                        handleImportanceChange(bubble.id, "citation")
+                      }
+                    />
+                    Citation
+                  </label>
+                </div>
+              </>
+            ) : (
+              // Mode texte complet
+              <>
+                <textarea
+                  value={bubble.text}
+                  onChange={(e) => updateBubble(bubble.id, e.target.value)}
+                />
+                <div className="bubble-actions">
+                  <button onClick={() => deleteBubble(bubble.id)}>
+                    <span role="img" aria-label="Delete">
+                      ❌
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => moveBubbleBefore(bubble.id, bubble.id)}
+                  >
+                    <span role="img" aria-label="Move before">
+                      ⬆️
+                    </span>
+                  </button>
+                  <button onClick={() => moveBubbleAfter(bubble.id, bubble.id)}>
+                    <span role="img" aria-label="Move after">
+                      ⬇️
+                    </span>
+                  </button>
+                </div>
+                <div className="bubble-type">
+                  {/* Boutons radio pour l'importance */}
+                  <label>
+                    <input
+                      type="radio"
+                      value="normal"
+                      checked={bubble.importance === "normal"}
+                      onChange={() =>
+                        handleImportanceChange(bubble.id, "normal")
+                      }
+                    />
+                    Normal
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      value="important"
+                      checked={bubble.importance === "important"}
+                      onChange={() =>
+                        handleImportanceChange(bubble.id, "important")
+                      }
+                    />
+                    Important
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      value="very-important"
+                      checked={bubble.importance === "very-important"}
+                      onChange={() =>
+                        handleImportanceChange(bubble.id, "very-important")
+                      }
+                    />
+                    Très important
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      value="example"
+                      checked={bubble.importance === "example"}
+                      onChange={() =>
+                        handleImportanceChange(bubble.id, "example")
+                      }
+                    />
+                    Exemple
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      value="citation"
+                      checked={bubble.importance === "citation"}
+                      onChange={() =>
+                        handleImportanceChange(bubble.id, "citation")
+                      }
+                    />
+                    Citation
+                  </label>
+                </div>
+                <div className="keywords-container">
+                  <h3>Mots-clés :</h3>
+                  <button
+                    onClick={() =>
+                      addKeywordToBubble(bubble.id, "Nouveau mot-clé")
+                    }
+                  >
+                    Ajouter mot-clé
+                  </button>
+                  {bubble.keywords.map((keyword) => (
+                    <div key={keyword.id} className="keyword-item">
+                      <input
+                        type="text"
+                        value={keyword.value}
+                        onChange={(e) =>
+                          updateKeywordInBubble(
+                            bubble.id,
+                            keyword.id,
+                            e.target.value
+                          )
+                        }
+                      />
+                      <button
+                        onClick={() =>
+                          deleteKeywordFromBubble(bubble.id, keyword.id)
+                        }
+                      >
+                        Supprimer
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
