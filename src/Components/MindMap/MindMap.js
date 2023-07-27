@@ -152,7 +152,6 @@ const MindMap = () => {
           importance,
         };
       }
-
       return bubble;
     });
     setBubbles(updatedMaps);
@@ -296,62 +295,26 @@ const MindMap = () => {
                   </button>
                 </div>
                 <div className="bubble-type">
-                  {/* Boutons radio pour l'importance */}
-                  <label>
-                    <input
-                      type="radio"
-                      value="normal"
-                      checked={bubble.importance === "normal"}
-                      onChange={() =>
-                        handleImportanceChange(bubble.id, "normal")
-                      }
-                    />
-                    Normal
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      value="important"
-                      checked={bubble.importance === "important"}
-                      onChange={() =>
-                        handleImportanceChange(bubble.id, "important")
-                      }
-                    />
-                    Important
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      value="very-important"
-                      checked={bubble.importance === "very-important"}
-                      onChange={() =>
-                        handleImportanceChange(bubble.id, "very-important")
-                      }
-                    />
-                    Très important
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      value="example"
-                      checked={bubble.importance === "example"}
-                      onChange={() =>
-                        handleImportanceChange(bubble.id, "example")
-                      }
-                    />
-                    Exemple
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      value="citation"
-                      checked={bubble.importance === "citation"}
-                      onChange={() =>
-                        handleImportanceChange(bubble.id, "citation")
-                      }
-                    />
-                    Citation
-                  </label>
+                  {/* Menu déroulant pour l'importance */}
+                  <select
+                    value={bubble.importance}
+                    onChange={(e) =>
+                      handleImportanceChange(bubble.id, e.target.value)
+                    }
+                  >
+                    <option value="introduction">Introduction</option>
+                    <option value="plan">Plan</option>
+                    <option value="idee-principale">Idée Principale</option>
+                    <option value="idee-secondaire">Idée Secondaire</option>
+                    <option value="idee-tertiaire">Idée Tertiaire</option>
+                    <option value="normal">Normal</option>
+                    <option value="idee-importante">Important</option>
+                    <option value="idee-tres-importante">Très important</option>
+                    <option value="exemple">Exemple</option>
+                    <option value="citation">Citation</option>
+                    <option value="lecon">Leçon</option>
+                    <option value="conclusion">Conclusion</option>
+                  </select>
                 </div>
               </>
             ) : (
@@ -381,62 +344,26 @@ const MindMap = () => {
                   </button>
                 </div>
                 <div className="bubble-type">
-                  {/* Boutons radio pour l'importance */}
-                  <label>
-                    <input
-                      type="radio"
-                      value="normal"
-                      checked={bubble.importance === "normal"}
-                      onChange={() =>
-                        handleImportanceChange(bubble.id, "normal")
-                      }
-                    />
-                    Normal
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      value="important"
-                      checked={bubble.importance === "important"}
-                      onChange={() =>
-                        handleImportanceChange(bubble.id, "important")
-                      }
-                    />
-                    Important
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      value="very-important"
-                      checked={bubble.importance === "very-important"}
-                      onChange={() =>
-                        handleImportanceChange(bubble.id, "very-important")
-                      }
-                    />
-                    Très important
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      value="example"
-                      checked={bubble.importance === "example"}
-                      onChange={() =>
-                        handleImportanceChange(bubble.id, "example")
-                      }
-                    />
-                    Exemple
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      value="citation"
-                      checked={bubble.importance === "citation"}
-                      onChange={() =>
-                        handleImportanceChange(bubble.id, "citation")
-                      }
-                    />
-                    Citation
-                  </label>
+                  {/* Menu déroulant pour l'importance */}
+                  <select
+                    value={bubble.importance}
+                    onChange={(e) =>
+                      handleImportanceChange(bubble.id, e.target.value)
+                    }
+                  >
+                    <option value="introduction">Introduction</option>
+                    <option value="plan">Plan</option>
+                    <option value="idee-principale">Idée Principale</option>
+                    <option value="idee-secondaire">Idée Secondaire</option>
+                    <option value="idee-tertiaire">Idée Tertiaire</option>
+                    <option value="normal">Normal</option>
+                    <option value="idee-importante">Important</option>
+                    <option value="idee-tres-importante">Très important</option>
+                    <option value="exemple">Exemple</option>
+                    <option value="citation">Citation</option>
+                    <option value="lecon">Leçon</option>
+                    <option value="conclusion">Conclusion</option>
+                  </select>
                 </div>
                 <div className="keywords-container">
                   <h3>Mots-clés :</h3>

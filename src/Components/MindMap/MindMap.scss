@@ -6,6 +6,10 @@
   font-family: Arial, sans-serif;
   min-height: 100vh;
 
+  h2 {
+    text-align: center;
+  }
+
   .sticky-buttons {
     background-color: #18835f;
     color: #fff;
@@ -48,24 +52,54 @@
     min-height: 10em;
     white-space: pre-wrap;
 
+    &.introduction {
+      background-color: #1100ff;
+      color: #fff;
+    }
+
+    &.plan {
+      background-color: #bcbfc2;
+    }
+
+    &.idee-principale {
+      background-color: #7af300;
+    }
+
+    &.idee-secondaire {
+      background-color: #cdf897;
+    }
+
+    &.idee-tertiaire {
+      background-color: #c9faba;
+    }
+
     &.normal {
       background-color: #f9f9f9;
     }
 
-    &.important {
+    &.idee-importante {
       background-color: #f8b7b6;
     }
 
-    &.very-important {
+    &.idee-tres-importante {
       background-color: #fa4646;
     }
 
-    &.example {
+    &.exemple {
       background-color: #fff385;
     }
 
     &.citation {
-      background-color: #9fff9f;
+      background-color: #00eeff;
+    }
+
+    &.lecon {
+      background-color: #ff4076;
+    }
+
+    &.conclusion {
+      background-color: #700000;
+      color: #fff;
     }
 
     .keyword-text {

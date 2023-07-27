@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { openDB } from "idb";
 import { nanoid } from "nanoid";
+import html2pdf from "html2pdf.js";
 import "./SavedMindMap.scss";
 
 const SavedMindMap = () => {
@@ -185,6 +186,82 @@ const SavedMindMap = () => {
     await db.put(DB_STORE_NAME, newMap);
   };
 
+  const exportToPDF = () => {
+    const contentDiv = document.createElement("div");
+
+    const titleElement = document.createElement("h1");
+    titleElement.textContent = mapTitle;
+    contentDiv.appendChild(titleElement);
+
+    // Fonction pour obtenir la couleur en fonction de l'importance
+    const getColorForImportance = (importance) => {
+      switch (importance) {
+        case "introduction":
+          return "#1100ff";
+        case "plan":
+          return "#bcbfc2";
+        case "idee-principale":
+          return "#7af300";
+        case "idee-secondaire":
+          return "#cdf897";
+        case "idee-tertiaire":
+          return "#c9faba";
+        case "normal":
+          return "#f9f9f9";
+        case "idee-importante":
+          return "#f8b7b6";
+        case "idee-tres-importante":
+          return "#fa4646";
+        case "exemple":
+          return "#fff385";
+        case "citation":
+          return "#00eeff";
+        case "lecon":
+          return "#ff4076";
+        case "conclusion":
+          return "#700000";
+        default:
+          return "#f9f9f9"; // Couleur par défaut si l'importance ne correspond à aucune option
+      }
+    };
+
+    bubbles.forEach((bubble) => {
+      const bubbleDiv = document.createElement("div"); // Utilisez une balise <div> pour conserver les sauts de ligne
+      const bubbleTitle = document.createElement("h3");
+      const bubbleContent = document.createElement("pre"); // Utilisez une balise <div> ou <pre> pour conserver les sauts de ligne
+
+      bubbleTitle.style.backgroundColor = getColorForImportance(
+        bubble.importance
+      );
+
+      bubbleTitle.textContent = `${bubble.importance}`;
+
+      if (keywordMode) {
+        const keywords = bubble.keywords
+          .map((keyword) => keyword.value)
+          .join(", ");
+        bubbleContent.textContent = `${keywords}`;
+      } else {
+        bubbleContent.textContent = bubble.text;
+      }
+
+      bubbleDiv.appendChild(bubbleTitle);
+      bubbleDiv.appendChild(bubbleContent);
+      contentDiv.appendChild(bubbleDiv);
+    });
+
+    const opt = {
+      margin: 10,
+      filename: `${mapTitle}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+    };
+
+    // Génère le PDF
+    html2pdf().from(contentDiv).set(opt).save();
+  };
+
   return (
     <div className="saved-mind-map">
       <h2>{mapTitle}</h2>
@@ -198,6 +275,9 @@ const SavedMindMap = () => {
             {keywordMode ? "Mode texte" : "Mode mots-clés"}
           </button>
         </div>
+        <button className="button-export" onClick={exportToPDF}>
+          Exporter au format PDF
+        </button>
       </div>
       {bubbles.map((bubble, index) => (
         <div key={bubble.id} className={`bubble ${bubble.importance}`}>
@@ -274,53 +354,28 @@ const SavedMindMap = () => {
                 ❌
               </span>
             </button>
-            <label>
-              <input
-                type="radio"
-                value="normal"
-                checked={bubble.importance === "normal"}
-                onChange={() => handleImportanceChange(bubble.id, "normal")}
-              />
-              Normal
-            </label>
-            <label>
-              <input
-                type="radio"
-                value="important"
-                checked={bubble.importance === "important"}
-                onChange={() => handleImportanceChange(bubble.id, "important")}
-              />
-              Important
-            </label>
-            <label>
-              <input
-                type="radio"
-                value="very-important"
-                checked={bubble.importance === "very-important"}
-                onChange={() =>
-                  handleImportanceChange(bubble.id, "very-important")
+            <div className="bubble-type">
+              {/* Menu déroulant pour l'importance */}
+              <select
+                value={bubble.importance}
+                onChange={(e) =>
+                  handleImportanceChange(bubble.id, e.target.value)
                 }
-              />
-              Très important
-            </label>
-            <label>
-              <input
-                type="radio"
-                value="example"
-                checked={bubble.importance === "example"}
-                onChange={() => handleImportanceChange(bubble.id, "example")}
-              />
-              Exemple
-            </label>
-            <label>
-              <input
-                type="radio"
-                value="citation"
-                checked={bubble.importance === "citation"}
-                onChange={() => handleImportanceChange(bubble.id, "citation")}
-              />
-              Citation
-            </label>
+              >
+                <option value="introduction">Introduction</option>
+                <option value="plan">Plan</option>
+                <option value="idee-principale">Idée Principale</option>
+                <option value="idee-secondaire">Idée Secondaire</option>
+                <option value="idee-tertiaire">Idée Tertiaire</option>
+                <option value="normal">Normal</option>
+                <option value="idee-importante">Important</option>
+                <option value="idee-tres-importante">Très important</option>
+                <option value="exemple">Exemple</option>
+                <option value="citation">Citation</option>
+                <option value="lecon">Leçon</option>
+                <option value="conclusion">Conclusion</option>
+              </select>
+            </div>
           </div>
         </div>
       ))}
