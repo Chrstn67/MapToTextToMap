@@ -231,7 +231,7 @@ const MindMap = () => {
       {/* Utiliser un input pour permettre à l'utilisateur de saisir le titre */}
       <input
         type="text"
-        value={mapTitle}
+        placeholder="Titre de la carte mentale"
         onChange={handleMapTitleChange}
         className="map-title-input"
       />
@@ -321,7 +321,7 @@ const MindMap = () => {
               // Mode texte complet
               <>
                 <textarea
-                  value={bubble.text}
+                  placeholder={bubble.text}
                   onChange={(e) => updateBubble(bubble.id, e.target.value)}
                 />
                 <div className="bubble-actions">
@@ -378,7 +378,7 @@ const MindMap = () => {
                     <div key={keyword.id} className="keyword-item">
                       <input
                         type="text"
-                        value={keyword.value}
+                        placeholder={keyword.value}
                         onChange={(e) =>
                           updateKeywordInBubble(
                             bubble.id,

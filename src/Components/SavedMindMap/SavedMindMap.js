@@ -289,7 +289,7 @@ const SavedMindMap = () => {
                 <div key={keyword.id} className="keyword-item">
                   <input
                     type="text"
-                    value={keyword.value}
+                    placeholder={keyword.value}
                     onChange={(e) =>
                       updateKeywordInBubble(
                         bubble.id,
@@ -321,7 +321,7 @@ const SavedMindMap = () => {
             // Mode texte
             <div>
               <textarea
-                value={bubble.text}
+                placeholder={bubble.text}
                 onChange={(e) => updateBubble(bubble.id, e.target.value)}
               />
             </div>
